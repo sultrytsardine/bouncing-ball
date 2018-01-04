@@ -22,12 +22,16 @@ var brickOffsetTop = 30;
 var brickOffsetLeft = 30;
 var destroyedBricks = 0;
 var bricks = [];
+var score = 0;
+var lives = 3;
 
 function draw() {
 	ctx.clearRect(0, 0, width, height);
 	drawPaddle();
 	drawBall();
 	drawBricks();
+	drawScore();
+	drawLives();
 }
 
 function drawBall() {
@@ -60,6 +64,18 @@ function drawBricks() {
 	}
 }
 
+function drawScore() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#0095DD";
+    ctx.fillText("Score: "+score, 8, 20);
+}
+
+function drawLives() {
+    ctx.font = "16px Arial";
+    ctx.fillStyle = "#0095DD";
+    ctx.fillText("Lives: "+lives, canvas.width-65, 20);
+}
+
 function drawBrick(col, row) {
 	var brickX = col * (brickWidth + brickPadding) + brickOffsetLeft;
 	var brickY = row * (brickHeight + brickPadding) + brickOffsetTop;
@@ -77,6 +93,7 @@ function calculateNewBallCoordinates() {
 	if (detectBrickCollision()) {
 		ballColour = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
 		dy *= -1;
+		score++;
 		checkWin();
 	}
 	if (detectXEdgeCollision()) {
@@ -87,16 +104,28 @@ function calculateNewBallCoordinates() {
 		ballColour = "#000000".replace(/0/g,function(){return (~~(Math.random()*16)).toString(16);});
 		dy *= -1;
 	} else if (y >= height - ballRadius) {
-		clearInterval(run);
-		ctx.clearRect(0, 0, width, height);
-		ctx.fillStyle = 'red';
-		ctx.font = "33px sans-serif";
-		ctx.fillText('Game over! Click to play again', 10, 50);
-		document.addEventListener('click', reloadGame, false);
+		console.log(lives);
+		lives--;
+		resetBall();
+		if (lives < 1) {
+			clearInterval(run);
+			ctx.clearRect(0, 0, width, height);
+			ctx.fillStyle = 'red';
+			ctx.font = "33px sans-serif";
+			ctx.fillText('Game over! Click to play again', 10, 50);
+			document.addEventListener('click', reloadGame, false);
+		}
 	}
 
 	x += dx;
 	y += dy;
+}
+
+function resetBall() {
+    x = Math.floor(Math.random() * width) + 1;
+    y = 3*(height / 4);
+    dx = 2;
+    dy = -2;
 }
 
 function reloadGame() {
@@ -161,6 +190,13 @@ function keyUpHandler(e) {
 	else if (e.keyCode === 37) leftPressed = false;
 }
 
+function mouseMoveHandler(e) {
+    var relativeX = e.clientX - canvas.offsetLeft;
+    if (relativeX - paddleWidth/2 > 0 && relativeX + paddleWidth/2 < canvas.width) {
+        paddleX = relativeX - paddleWidth/2;
+    }
+}
+
 function setUpBricks() {
 	for (col = 0; col < brickColumnCount; col++) {
 	bricks[col] = [];
@@ -172,6 +208,7 @@ function setUpBricks() {
 
 document.addEventListener('keydown', keyDownHandler, false);
 document.addEventListener('keyup', keyUpHandler, false);
+document.addEventListener("mousemove", mouseMoveHandler, false);
 
 setUpBricks();
 var run = setInterval(draw, 10);
